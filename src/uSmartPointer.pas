@@ -8,6 +8,7 @@
 //  showmessage(s.Count.ToString);
 //end;
 //teste
+//teste2
 
 unit uSmartPointer;
 
