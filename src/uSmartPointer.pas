@@ -1,9 +1,9 @@
 // Exemplo de uso
 //procedure TForm1.Button1Click(Sender: TObject);
 //var
-//  s: IShared<TStringList>;
+//  s: ISH<TStringList>;
 //begin
-//  s := Shared<TStringList>.Make;
+//  s := SH<TStringList>.Make;
 //  s.Add('teste');
 //  showmessage(s.Count.ToString);
 //end;
@@ -89,22 +89,22 @@ type
 
   ENotSupportedException = SysUtils.ENotSupportedException;
 
-  IShared<T> = reference to function: T;
+  ISH<T> = reference to function: T;
 
-  Shared<T> = record
+  SH<T> = record
   strict private
     fValue: T;
     fFinalizer: IInterface;
-    class function GetMake: IShared<T>; static;
+    class function GetMake: ISH<T>; static;
   public
-    class operator Implicit(const value: IShared<T>): Shared<T>;
-    class operator Implicit(const value: Shared<T>): IShared<T>;
-    class operator Implicit(const value: Shared<T>): T; {$IFNDEF DELPHIXE4}inline;{$ENDIF}
-    class operator Implicit(const value: T): Shared<T>;
+    class operator Implicit(const value: ISH<T>): SH<T>;
+    class operator Implicit(const value: SH<T>): ISH<T>;
+    class operator Implicit(const value: SH<T>): T; {$IFNDEF DELPHIXE4}inline;{$ENDIF}
+    class operator Implicit(const value: T): SH<T>;
     property Value: T read fValue;
 
-    class property Make: IShared<T> read GetMake;
-    class function New: IShared<T>; static; deprecated 'use Shared<T>.Make';
+    class property Make: ISH<T> read GetMake;
+    class function New: ISH<T>; static; deprecated 'use SH<T>.Make';
   end;
 
   TType = class
@@ -142,7 +142,7 @@ type
       class function Create(const value: TObject): PObjectFinalizer; overload; static;
     end;
 
-    TRecordFinalizer = class(TInterfacedObject, IShared<Pointer>)
+    TRecordFinalizer = class(TInterfacedObject, ISH<Pointer>)
     private
       fValue: Pointer;
       fTypeInfo: PTypeInfo;
@@ -153,7 +153,7 @@ type
       destructor Destroy; override;
     end;
 
-    THandleFinalizer<T> = class(TInterfacedObject, IShared<T>)
+    THandleFinalizer<T> = class(TInterfacedObject, ISH<T>)
     private
       fValue: T;
       fFinalizer: TAction<T>;
@@ -174,11 +174,11 @@ type
   private
     class procedure Make(const value: TObject; var result: PObjectFinalizer); overload; static; inline;
   public
-    class function Make<T>(const value: T): IShared<T>; overload; static;
-    class function Make<T>(const value: T; const finalizer: TAction<T>): IShared<T>; overload; static;
+    class function Make<T>(const value: T): ISH<T>; overload; static;
+    class function Make<T>(const value: T; const finalizer: TAction<T>): ISH<T>; overload; static;
 
-    class function New<T>(const value: T): IShared<T>; overload; static; deprecated 'use Shared.Make';
-    class function New<T>(const value: T; const finalizer: TAction<T>): IShared<T>; overload; static; deprecated 'use Shared.Make';
+    class function New<T>(const value: T): ISH<T>; overload; static; deprecated 'use Shared.Make';
+    class function New<T>(const value: T; const finalizer: TAction<T>): ISH<T>; overload; static; deprecated 'use Shared.Make';
   end;
 
   IObjectActivator = interface
@@ -241,28 +241,28 @@ type
 
 implementation
 
-{ Shared<T> }
+{ SH<T> }
 
-class function Shared<T>.GetMake: IShared<T>;
+class function SH<T>.GetMake: ISH<T>;
 begin
   case TType.Kind<T> of
-    tkClass: IShared<TObject>(Result) := IShared<TObject>(Shared.TObjectFinalizer.Create(TypeInfo(T)));
-    tkPointer: IShared<Pointer>(Result) := Shared.TRecordFinalizer.Create(TypeInfo(T));
+    tkClass: ISH<TObject>(Result) := ISH<TObject>(Shared.TObjectFinalizer.Create(TypeInfo(T)));
+    tkPointer: ISH<Pointer>(Result) := Shared.TRecordFinalizer.Create(TypeInfo(T));
   end;
 end;
 
-class operator Shared<T>.Implicit(const value: Shared<T>): IShared<T>;
+class operator SH<T>.Implicit(const value: SH<T>): ISH<T>;
 begin
-  Result := IShared<T>(value.fFinalizer);
+  Result := ISH<T>(value.fFinalizer);
 end;
 
-class operator Shared<T>.Implicit(const value: IShared<T>): Shared<T>;
+class operator SH<T>.Implicit(const value: ISH<T>): SH<T>;
 begin
   Result.fValue := value();
-  IShared<T>(Result.fFinalizer) := value;
+  ISH<T>(Result.fFinalizer) := value;
 end;
 
-class operator Shared<T>.Implicit(const value: T): Shared<T>;
+class operator SH<T>.Implicit(const value: T): SH<T>;
 begin
   Result.fValue := value;
   case TType.Kind<T> of
@@ -281,12 +281,12 @@ begin
   end;
 end;
 
-class operator Shared<T>.Implicit(const value: Shared<T>): T;
+class operator SH<T>.Implicit(const value: SH<T>): T;
 begin
   Result := value.fValue;
 end;
 
-class function Shared<T>.New: IShared<T>;
+class function SH<T>.New: ISH<T>;
 begin
   Result := GetMake();
 end;
@@ -306,25 +306,25 @@ begin
   result.Value := value;
 end;
 
-class function Shared.Make<T>(const value: T): IShared<T>;
+class function Shared.Make<T>(const value: T): ISH<T>;
 begin
   case TType.Kind<T> of
     tkClass: Make(PObject(@value)^, PObjectFinalizer(Result));
-    tkPointer: IShared<Pointer>(Result) := Shared.TRecordFinalizer.Create(PPointer(@value)^, TypeInfo(T));
+    tkPointer: ISH<Pointer>(Result) := Shared.TRecordFinalizer.Create(PPointer(@value)^, TypeInfo(T));
   end;
 end;
 
-class function Shared.Make<T>(const value: T; const finalizer: TAction<T>): IShared<T>;
+class function Shared.Make<T>(const value: T; const finalizer: TAction<T>): ISH<T>;
 begin
   Result := THandleFinalizer<T>.Create(value, finalizer);
 end;
 
-class function Shared.New<T>(const value: T): IShared<T>;
+class function Shared.New<T>(const value: T): ISH<T>;
 begin
   Result := Make<T>(value);
 end;
 
-class function Shared.New<T>(const value: T; const finalizer: TAction<T>): IShared<T>;
+class function Shared.New<T>(const value: T; const finalizer: TAction<T>): ISH<T>;
 begin
   Result := Make<T>(value, finalizer);
 end;
