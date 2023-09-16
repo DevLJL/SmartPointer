@@ -1,4 +1,4 @@
-// Exemplo de uso
+// Exemplo de uso 01
 //procedure TForm1.Button1Click(Sender: TObject);
 //var
 //  s: ISH<TStringList>;
@@ -6,6 +6,36 @@
 //  s := SH<TStringList>.Make;
 //  s.Add('teste');
 //  showmessage(s.Count.ToString);
+//end;
+
+// Exemplo de uso 02
+//procedure TForm1.Button1Click(Sender: TObject);
+//var
+//  s: SH<TStringList>;
+//begin
+//  s := TStringList.Create;
+//  s.Value.Add('teste');
+//  showmessage(s.Value.Count.ToString);
+//end;
+
+// Exemplo de uso 03
+//procedure TForm1.Button1Click(Sender: TObject);
+//var
+//  s: ISP<TStringList>;
+//begin
+//  s := TSP<TStringList>.Create;
+//  s.Get.Add('teste');
+//  showmessage(s.Get.Count.ToString);
+//end;
+
+// Exemplo de uso 04
+//procedure TForm1.Button1Click(Sender: TObject);
+//var
+//  s: ISP<TStringList>;
+//begin
+//  s := TSP<TStringList>.Create(TStringList.Create);
+//  s.Get.Add('teste');
+//  showmessage(s.Get.Count.ToString);
 //end;
 
 unit uSmartPointer;
@@ -20,6 +50,23 @@ uses
 
 type
   PObject = ^TObject;
+
+  ISP<T: class, constructor> = interface
+    ['{936053FB-9950-4BE3-8C6F-BF429E6728FB}']
+    function Get: T;
+    function SetValue(AValue: T): ISP<T>;
+  end;
+
+  TSP<T: class, constructor> = class(TInterfacedObject, ISP<T>)
+  private
+    FValue: T;
+  public
+    constructor Create; overload;
+    constructor Create(AValue: T); overload;
+    destructor Destroy; override;
+    function Get: T;
+    function SetValue(AValue: T): ISP<T>;
+  end;
 
   /// <summary>
   ///   Represents a logical predicate.
@@ -182,7 +229,7 @@ type
   end;
 
   IObjectActivator = interface
-    ['{CE05FB89-3467-449E-81EA-A5AEECAB7BB8}']
+    ['{C232D50A-4EAD-473F-8C1E-BD5538ADEBAA}']
     function CreateInstance: TValue;
   end;
 
@@ -630,7 +677,7 @@ end;
 
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
 const
-  COrdinalSizes: array[TOrdType] of Integer = (
+  COrdinaLSizes: array[TOrdType] of Integer = (
     SizeOf(ShortInt){1},
     SizeOf(Byte){1},
     SizeOf(SmallInt){2},
@@ -656,7 +703,7 @@ begin
     tkWChar:
       Result := SizeOf(WideChar){2};
     tkInteger, tkEnumeration:
-      Result := COrdinalSizes[typeInfo.TypeData.OrdType];
+      Result := COrdinaLSizes[typeInfo.TypeData.OrdType];
     tkFloat:
       Result := CFloatSizes[typeInfo.TypeData.FloatType];
     tkString, tkLString, tkUString, tkWString, tkInterface, tkClass, tkClassRef, tkDynArray, tkPointer, tkProcedure:
@@ -696,6 +743,39 @@ begin
   Result := count div 8;
   if count mod 8 <> 0 then
     Inc(Result);
+end;
+
+
+{ TSP<T> }
+constructor TSP<T>.Create;
+begin
+  inherited Create;
+  FValue := T.Create;
+end;
+
+constructor TSP<T>.Create(AValue: T);
+begin
+  inherited Create;
+  FValue := AValue;
+end;
+
+destructor TSP<T>.Destroy;
+begin
+  FValue.Free;
+  inherited;
+end;
+
+function TSP<T>.Get: T;
+begin
+  Result := FValue;
+end;
+
+function TSP<T>.SetValue(AValue: T): ISP<T>;
+begin
+  Result := Self;
+  if Assigned(FValue) then
+    FreeAndNil(FValue);
+  FValue := AValue;
 end;
 
 end.
