@@ -24,8 +24,8 @@
 //  s: ISP<TStringList>;
 //begin
 //  s := TSP<TStringList>.Create;
-//  s.Get.Add('teste');
-//  showmessage(s.Get.Count.ToString);
+//  s.Value.Add('teste');
+//  showmessage(s.Value.Count.ToString);
 //end;
 
 // Exemplo de uso 04
@@ -34,8 +34,8 @@
 //  s: ISP<TStringList>;
 //begin
 //  s := TSP<TStringList>.Create(TStringList.Create);
-//  s.Get.Add('teste');
-//  showmessage(s.Get.Count.ToString);
+//  s.Value.Add('teste');
+//  showmessage(s.Value.Count.ToString);
 //end;
 
 unit uSmartPointer;
@@ -53,7 +53,7 @@ type
 
   ISP<T: class, constructor> = interface
     ['{936053FB-9950-4BE3-8C6F-BF429E6728FB}']
-    function Get: T;
+    function Value: T;
     function SetValue(AValue: T): ISP<T>;
   end;
 
@@ -64,7 +64,7 @@ type
     constructor Create; overload;
     constructor Create(AValue: T); overload;
     destructor Destroy; override;
-    function Get: T;
+    function Value: T;
     function SetValue(AValue: T): ISP<T>;
   end;
 
@@ -765,7 +765,7 @@ begin
   inherited;
 end;
 
-function TSP<T>.Get: T;
+function TSP<T>.Value: T;
 begin
   Result := FValue;
 end;
